@@ -1,0 +1,304 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, Heart, Repeat, Shuffle, Music, Home, Search, Library, Plus } from 'lucide-react';
+
+const MusicStreamingApp = () => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentSong, setCurrentSong] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const [volume, setVolume] = useState(70);
+  const [currentView, setCurrentView] = useState('home');
+  const [likedSongs, setLikedSongs] = useState(new Set());
+  const [isRepeat, setIsRepeat] = useState(false);
+  const [isShuffle, setIsShuffle] = useState(false);
+  const progressInterval = useRef(null);
+
+  const songs = [
+    { id: 1, title: "GWALA", artist: "GTL GXNG ft. Deno", album: "GWALA - Single", duration: "2:48", cover: "bg-gradient-to-br from-red-500 to-orange-500" },
+    { id: 2, title: "DUSKIE GOT ATTITUDE", artist: "GTL GXNG ft. Deno", album: "DUSKIE - Single", duration: "2:25", cover: "bg-gradient-to-br from-purple-500 to-pink-500" },
+    { id: 3, title: "I Love U DUSKIE", artist: "GTL GXNG ft. Deno", album: "DUSKIE - Single", duration: "3:17", cover: "bg-gradient-to-br from-purple-500 to-pink-500" },
+    { id: 4, title: "4 Oclock", artist: "GTL GXNG ft. Deno", album: "moon and stars", duration: "3:22", cover: "bg-gradient-to-br from-blue-500 to-cyan-500" },
+    { id: 5, title: "GOD", artist: "GTL GXNG ft. Lucky & Deno", album: "POUND AND DOLLAR", duration: "3:45", cover: "bg-gradient-to-br from-yellow-500 to-orange-500" },
+    { id: 6, title: "Cum n Go (Remix)", artist: "GTL GXNG ft. Deno", album: "Cum n Go (Remix) - Single", duration: "3:12", cover: "bg-gradient-to-br from-green-500 to-teal-500" },
+    { id: 7, title: "Dear X", artist: "GTL GXNG ft. Deno", album: "Dear X - Single", duration: "3:02", cover: "bg-gradient-to-br from-indigo-500 to-purple-500" },
+    { id: 8, title: "HBDAY", artist: "GTL GXNG ft. Deno", album: "GXNG EP", duration: "2:58", cover: "bg-gradient-to-br from-pink-500 to-red-500" },
+    { id: 9, title: "POOKIE DUSKI", artist: "GTL GXNG ft. Deno", album: "POOKIE DUSKI - Single", duration: "3:05", cover: "bg-gradient-to-br from-cyan-500 to-blue-500" },
+    { id: 10, title: "VALENTINO (KISS MY TEETH)", artist: "GTL GXNG", album: "VALENTINO EP", duration: "3:28", cover: "bg-gradient-to-br from-red-500 to-pink-500" },
+    { id: 11, title: "NOOKIE", artist: "GTL GXNG ft. Deno", album: "NOOKIE - Single", duration: "3:15", cover: "bg-gradient-to-br from-orange-500 to-yellow-500" },
+    { id: 12, title: "DECEMBER", artist: "GTL GXNG", album: "DECEMBER - Single", duration: "3:42", cover: "bg-gradient-to-br from-blue-600 to-purple-600" },
+    { id: 13, title: "LIFESTYLE - FREESTYLE", artist: "GTL GXNG ft. LUCCI", album: "GENESIS", duration: "3:20", cover: "bg-gradient-to-br from-emerald-500 to-teal-500" },
+    { id: 14, title: "KISS MY TEETH", artist: "GTL GXNG", album: "VALENTINO EP", duration: "2:52", cover: "bg-gradient-to-br from-rose-500 to-red-600" },
+  ];
+
+  const playlists = [
+    { name: "GTL GXNG Essentials", count: "10 songs", color: "from-red-600 to-orange-800" },
+    { name: "UK Hip Hop Heat", count: "32 songs", color: "from-green-600 to-green-800" },
+    { name: "Daily Mix 1", count: "45 songs", color: "from-blue-600 to-blue-800" },
+    { name: "Deno Features", count: "28 songs", color: "from-purple-600 to-purple-800" },
+  ];
+
+  useEffect(() => {
+    if (isPlaying) {
+      progressInterval.current = setInterval(() => {
+        setProgress(prev => {
+          if (prev >= 100) {
+            handleNext();
+            return 0;
+          }
+          return prev + 0.5;
+        });
+      }, 150);
+    } else {
+      if (progressInterval.current) {
+        clearInterval(progressInterval.current);
+      }
+    }
+    return () => {
+      if (progressInterval.current) {
+        clearInterval(progressInterval.current);
+      }
+    };
+  }, [isPlaying]);
+
+  const handlePlayPause = () => setIsPlaying(!isPlaying);
+
+  const handleNext = () => {
+    setCurrentSong((prev) => (prev + 1) % songs.length);
+    setProgress(0);
+  };
+
+  const handlePrevious = () => {
+    setCurrentSong((prev) => (prev - 1 + songs.length) % songs.length);
+    setProgress(0);
+  };
+
+  const toggleLike = (id) => {
+    setLikedSongs(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  const formatTime = (percentage) => {
+    const duration = songs[currentSong].duration.split(':');
+    const totalSeconds = parseInt(duration[0]) * 60 + parseInt(duration[1]);
+    const currentSeconds = Math.floor((percentage / 100) * totalSeconds);
+    const mins = Math.floor(currentSeconds / 60);
+    const secs = currentSeconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <div className="h-screen bg-black text-white flex flex-col">
+      {/* Main Content */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <div className="w-64 bg-black p-6 flex flex-col gap-6">
+          <div className="text-2xl font-bold">StreamBeats</div>
+          
+          <nav className="flex flex-col gap-4">
+            <button
+              onClick={() => setCurrentView('home')}
+              className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
+                currentView === 'home' ? 'bg-gray-800' : 'hover:bg-gray-900'
+              }`}
+            >
+              <Home size={24} />
+              <span>Home</span>
+            </button>
+            <button
+              onClick={() => setCurrentView('search')}
+              className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
+                currentView === 'search' ? 'bg-gray-800' : 'hover:bg-gray-900'
+              }`}
+            >
+              <Search size={24} />
+              <span>Search</span>
+            </button>
+            <button
+              onClick={() => setCurrentView('library')}
+              className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
+                currentView === 'library' ? 'bg-gray-800' : 'hover:bg-gray-900'
+              }`}
+            >
+              <Library size={24} />
+              <span>Your Library</span>
+            </button>
+          </nav>
+
+          <div className="mt-6">
+            <button className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-gray-900 w-full transition-colors">
+              <Plus size={24} />
+              <span>Create Playlist</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Main Area */}
+        <div className="flex-1 bg-gradient-to-b from-gray-900 to-black overflow-y-auto p-8">
+          {currentView === 'home' && (
+            <>
+              <h1 className="text-4xl font-bold mb-8">Good evening</h1>
+              
+              <div className="grid grid-cols-2 gap-4 mb-8">
+                {playlists.map((playlist, idx) => (
+                  <div
+                    key={idx}
+                    className="bg-gray-800/40 rounded-lg flex items-center gap-4 hover:bg-gray-800/60 transition-all cursor-pointer group overflow-hidden"
+                  >
+                    <div className={`w-20 h-20 bg-gradient-to-br ${playlist.color} flex items-center justify-center flex-shrink-0`}>
+                      <Music size={32} />
+                    </div>
+                    <div className="flex-1 pr-4">
+                      <div className="font-semibold">{playlist.name}</div>
+                      <div className="text-sm text-gray-400">{playlist.count}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <h2 className="text-2xl font-bold mb-4">Recently Played</h2>
+              <div className="space-y-2">
+                {songs.map((song, idx) => (
+                  <div
+                    key={song.id}
+                    onClick={() => {
+                      setCurrentSong(idx);
+                      setIsPlaying(true);
+                      setProgress(0);
+                    }}
+                    className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-800/60 transition-all cursor-pointer group"
+                  >
+                    <div className={`w-12 h-12 rounded ${song.cover} flex items-center justify-center flex-shrink-0`}>
+                      <Music size={20} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate">{song.title}</div>
+                      <div className="text-sm text-gray-400 truncate">{song.artist}</div>
+                    </div>
+                    <div className="text-sm text-gray-400">{song.album}</div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleLike(song.id);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Heart
+                        size={20}
+                        className={likedSongs.has(song.id) ? 'fill-green-500 text-green-500' : ''}
+                      />
+                    </button>
+                    <div className="text-sm text-gray-400 w-12 text-right">{song.duration}</div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {currentView === 'search' && (
+            <>
+              <h1 className="text-4xl font-bold mb-8">Search</h1>
+              <input
+                type="text"
+                placeholder="What do you want to listen to?"
+                className="w-full max-w-md px-4 py-3 rounded-full bg-white text-black placeholder-gray-600 focus:outline-none"
+              />
+            </>
+          )}
+
+          {currentView === 'library' && (
+            <>
+              <h1 className="text-4xl font-bold mb-8">Your Library</h1>
+              <div className="text-gray-400">Your playlists and liked songs will appear here</div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Player */}
+      <div className="bg-gray-900 border-t border-gray-800 px-4 py-3">
+        <div className="flex items-center justify-between mb-2">
+          {/* Song Info */}
+          <div className="flex items-center gap-4 flex-1">
+            <div className={`w-14 h-14 rounded ${songs[currentSong].cover} flex items-center justify-center`}>
+              <Music size={24} />
+            </div>
+            <div>
+              <div className="font-medium">{songs[currentSong].title}</div>
+              <div className="text-sm text-gray-400">{songs[currentSong].artist}</div>
+            </div>
+            <button
+              onClick={() => toggleLike(songs[currentSong].id)}
+              className="ml-4"
+            >
+              <Heart
+                size={20}
+                className={likedSongs.has(songs[currentSong].id) ? 'fill-green-500 text-green-500' : ''}
+              />
+            </button>
+          </div>
+
+          {/* Controls */}
+          <div className="flex flex-col items-center flex-1 gap-2">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setIsShuffle(!isShuffle)}
+                className={`hover:text-white transition-colors ${isShuffle ? 'text-green-500' : 'text-gray-400'}`}
+              >
+                <Shuffle size={20} />
+              </button>
+              <button onClick={handlePrevious} className="hover:text-white transition-colors text-gray-400">
+                <SkipBack size={24} />
+              </button>
+              <button
+                onClick={handlePlayPause}
+                className="bg-white text-black rounded-full p-2 hover:scale-105 transition-transform"
+              >
+                {isPlaying ? <Pause size={24} /> : <Play size={24} className="ml-0.5" />}
+              </button>
+              <button onClick={handleNext} className="hover:text-white transition-colors text-gray-400">
+                <SkipForward size={24} />
+              </button>
+              <button
+                onClick={() => setIsRepeat(!isRepeat)}
+                className={`hover:text-white transition-colors ${isRepeat ? 'text-green-500' : 'text-gray-400'}`}
+              >
+                <Repeat size={20} />
+              </button>
+            </div>
+            <div className="flex items-center gap-2 w-full max-w-2xl">
+              <span className="text-xs text-gray-400 w-10 text-right">{formatTime(progress)}</span>
+              <div className="flex-1 h-1 bg-gray-700 rounded-full overflow-hidden cursor-pointer group">
+                <div
+                  className="h-full bg-white group-hover:bg-green-500 transition-colors"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+              <span className="text-xs text-gray-400 w-10">{songs[currentSong].duration}</span>
+            </div>
+          </div>
+
+          {/* Volume */}
+          <div className="flex items-center gap-2 flex-1 justify-end">
+            <Volume2 size={20} className="text-gray-400" />
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={volume}
+              onChange={(e) => setVolume(e.target.value)}
+              className="w-24 accent-white"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default MusicStreamingApp;
